@@ -1,0 +1,29 @@
+./venv
+# Byte-compiled / optimized / compiled files
+__pycache__/
+*.pyc
+*.pyo
+
+# Temporary files
+*.tmp
+*.lock
+
+# Logs
+*.log
+
+# Editor and IDE settings
+.vscode/
+
+
+# IDEs and editors (leave these if you're not using them)
+.PyCharm
+.idea/
+out/
+
+# Google Cloud
+gcloud/
+gcloud/credentials.json
+gcloud/credentials.json.enc
+
+prompts/
+models/
