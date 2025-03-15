@@ -5,6 +5,7 @@ calendar:
 
 speech:
   model_name: openai/whisper-large-v3
+  #model_name: openai/whisper-small
   language: korean
   cache_dir: models
   silence_threshold: 1000
@@ -12,6 +13,8 @@ speech:
   max_duration: 60
 
 llm:
-  model_type: huggingface
-  model_name: beomi/KoAlpaca-Polyglot-5.8B
+  #model_type: huggingface
+  #model_name: beomi/KoAlpaca-Polyglot-5.8B
+  model_type: ollama
+  model_name: bnksys/yanolja-eeve-korean-instruct-10.8b
   cache_dir: models 
