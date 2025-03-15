@@ -1,0 +1,17 @@
+calendar:
+  type: google
+  credentials_path: gcloud/credentials.json
+  token_path: token.json
+
+speech:
+  model_name: openai/whisper-large-v3
+  language: korean
+  cache_dir: models
+  silence_threshold: 1000
+  silence_duration: 2.0
+  max_duration: 60
+
+llm:
+  model_type: huggingface
+  model_name: beomi/KoAlpaca-Polyglot-5.8B
+  cache_dir: models 
