@@ -17,7 +17,7 @@ class GoogleCalendarManager:
     """Google 캘린더 API를 사용하여 일정을 관리하는 클래스"""
 
     def __init__(
-        self, credentials_path="./gcloud/credentials.json", token_path="token.json"
+        self, credentials_path="./gcloud/credential.json", token_path="token.json"
     ):
         """
         GoogleCalendarManager 초기화
@@ -57,7 +57,7 @@ class GoogleCalendarManager:
         Google 캘린더에 일정 추가
 
         Args:
-            calendar_info (dict): 일정 정보 (날짜, 시간, 제목, 참석자, 장소 등)
+            calendar_info (dict): 일정 정보 (날짜, 시간, 제목, 장소 등)
 
         Returns:
             bool: 일정 추가 성공 여부
@@ -84,19 +84,9 @@ class GoogleCalendarManager:
 
             end_datetime = f"{date_str}T{end_hour:02d}:{end_minute:02d}:00"
 
-            # 참석자 목록 처리
-            attendees_list = []
-            if (
-                calendar_info.get("attendees")
-                and calendar_info.get("attendees") != "없음"
-            ):
-                for attendee in calendar_info.get("attendees").split(","):
-                    attendees_list.append({"email": attendee.strip()})
-
-            # 일정 생성
+            # 기본 이벤트 정보
             event = {
                 "summary": calendar_info.get("title", "새 일정"),
-                "location": calendar_info.get("location", ""),
                 "description": "음성 인식을 통해 생성된 일정",
                 "start": {
                     "dateTime": start_datetime,
@@ -106,11 +96,15 @@ class GoogleCalendarManager:
                     "dateTime": end_datetime,
                     "timeZone": "Asia/Seoul",
                 },
-                "attendees": attendees_list,
                 "reminders": {
                     "useDefault": True,
                 },
             }
+
+            # 장소 정보가 있는 경우에만 추가
+            location = calendar_info.get("location", "")
+            if location and location != "없음" and location != "장소 없음":
+                event["location"] = location
 
             event = (
                 self.service.events().insert(calendarId="primary", body=event).execute()
@@ -217,8 +211,15 @@ class GoogleCalendarManager:
             if "title" in calendar_info:
                 event["summary"] = calendar_info["title"]
 
+            # 장소 정보 처리
             if "location" in calendar_info:
-                event["location"] = calendar_info["location"]
+                location = calendar_info["location"]
+                if location and location != "없음" and location != "장소 없음":
+                    event["location"] = location
+                else:
+                    # 장소 정보가 없는 경우 필드 제거
+                    if "location" in event:
+                        del event["location"]
 
             if "date" in calendar_info and "time" in calendar_info:
                 date_str = calendar_info["date"]
@@ -241,11 +242,23 @@ class GoogleCalendarManager:
                 event["end"]["dateTime"] = end_datetime
 
             # 참석자 목록 처리
-            if "attendees" in calendar_info and calendar_info["attendees"] != "없음":
-                attendees_list = []
-                for attendee in calendar_info["attendees"].split(","):
-                    attendees_list.append({"email": attendee.strip()})
-                event["attendees"] = attendees_list
+            if "attendees" in calendar_info:
+                attendees = calendar_info["attendees"]
+                if attendees and attendees != "없음" and attendees != "참석자 없음":
+                    attendees_list = []
+                    for attendee in attendees.split(","):
+                        email = attendee.strip()
+                        # 이메일 형식 검증 (간단한 검증)
+                        if "@" in email and "." in email:
+                            attendees_list.append({"email": email})
+
+                    # 유효한 참석자가 있는 경우에만 추가
+                    if attendees_list:
+                        event["attendees"] = attendees_list
+                else:
+                    # 참석자 정보가 없는 경우 필드 제거
+                    if "attendees" in event:
+                        del event["attendees"]
 
             # 일정 업데이트
             updated_event = (

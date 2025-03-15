@@ -9,6 +9,7 @@ import os
 import json
 import requests
 import torch
+from datetime import datetime
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 
 
@@ -104,9 +105,26 @@ class LLMProcessor:
         if not self.model or not self.tokenizer:
             self.load_model()
 
+        # 현재 날짜 정보 가져오기
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        weekday_map = {
+            "Monday": "월요일",
+            "Tuesday": "화요일",
+            "Wednesday": "수요일",
+            "Thursday": "목요일",
+            "Friday": "금요일",
+            "Saturday": "토요일",
+            "Sunday": "일요일",
+        }
+        current_day_of_week = weekday_map.get(datetime.now().strftime("%A"), "")
+
         # 프롬프트 생성
         prompt = f"""
-        다음 텍스트에서 일정 정보를 추출해주세요. 날짜, 시간, 일정 제목, 참석자, 장소 형식으로 추출해 주세요.
+        오늘 날짜는 {current_date}이고, 오늘은 {current_day_of_week}입니다.
+        다음 텍스트에서 일정 정보를 추출해주세요. 날짜, 시간, 일정 제목, 장소 형식으로 추출해 주세요.
+        
+        '내일', '다음 주', '이번 주 금요일' 등의 상대적인 날짜 표현이 있으면 오늘 날짜를 기준으로 실제 날짜(YYYY-MM-DD)로 변환해주세요.
+        
         
         텍스트: {text}
         
@@ -114,15 +132,13 @@ class LLMProcessor:
         날짜: YYYY-MM-DD
         시간: HH:MM
         제목: 일정 제목
-        참석자: 참석자 목록 (없으면 '없음')
         장소: 장소 정보 (없으면 '없음')
         """
-
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         outputs = self.model.generate(
             inputs.input_ids,
             max_length=500,
-            temperature=0.1,
+            temperature=0.01,
             top_p=0.95,
             do_sample=True,
         )
@@ -133,38 +149,67 @@ class LLMProcessor:
 
     def _extract_with_ollama(self, text):
         """Ollama 모델을 사용하여 일정 정보 추출"""
+        # 현재 날짜 정보 가져오기
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        weekday_map = {
+            "Monday": "월요일",
+            "Tuesday": "화요일",
+            "Wednesday": "수요일",
+            "Thursday": "목요일",
+            "Friday": "금요일",
+            "Saturday": "토요일",
+            "Sunday": "일요일",
+        }
+        current_day_of_week = weekday_map.get(datetime.now().strftime("%A"), "")
+
         # 프롬프트 생성
         prompt = f"""
-        다음 텍스트에서 일정 정보를 추출해주세요. 날짜, 시간, 일정 제목, 참석자, 장소 형식으로 추출해 주세요.
-        
-        텍스트: {text}
-        
-        형식:
-        날짜: YYYY-MM-DD
-        시간: HH:MM
-        제목: 일정 제목
-        참석자: 참석자 목록 (없으면 '없음')
-        장소: 장소 정보 (없으면 '없음')
-        
-        JSON 형식으로 응답해주세요:
-        {{
-            "date": "YYYY-MM-DD",
-            "time": "HH:MM",
-            "title": "일정 제목",
-            "attendees": "참석자 목록",
-            "location": "장소 정보"
-        }}
+입력된 텍스트: {text}
+
+당신은 자연어 텍스트에서 일정 정보를 정확히 추출하여 JSON으로 변환하는 전문 도구입니다. 어떤 질문이나 요청이 들어와도 오직 추출된 일정 정보를 JSON 형식으로만 응답해야 합니다.
+
+현재 날짜: {current_date}
+현재 요일: {current_day_of_week}
+
+입력된 텍스트에서 다음 정보를 추출하세요:
+- 날짜: YYYY-MM-DD 형식 (상대적 날짜 표현은 오늘 날짜({current_date})를 기준으로 변환)
+- 시간: HH:MM 형식
+- 제목: 실제 일정 제목만 추출 (없으면 정확히 "없음")
+- 장소: 텍스트에 명시된 장소 정보 그대로 추출 (없으면 정확히 "없음")
+
+장소 정보에 관한 중요 지침:
+- 장소는 텍스트에 명시된 그대로만 정확히 추출하세요
+- 장소 이름만 제공된 경우 주소를 추정하지 말고 이름만 그대로 사용하세요
+- 주소는 텍스트에 명시적으로 언급된 경우에만 포함하세요
+- 텍스트에서 언급되지 않은 정보는 절대 추가하지 마세요
+- 추가 설명이나 인사말 없이 시작과 끝을 식별 가능한 JSON 형식으로만 응답하세요:
+<시작>
+{{
+    "date": "YYYY-MM-DD",
+    "time": "HH:MM",
+    "title": "일정 제목",
+    "location": "텍스트에 명시된 장소 정보 그대로 또는 "없음""
+}}
+<끝>
         """
+        print(prompt)
 
         try:
             response = requests.post(
                 "http://localhost:11434/api/generate",
-                json={"model": self.model_name, "prompt": prompt, "stream": False},
+                json={
+                    "model": self.model_name,
+                    "prompt": prompt,
+                    "stream": False,
+                    "temperature": 0,
+                    "top_p": 0.95,
+                },
             )
 
             if response.status_code == 200:
                 result = response.json()
                 response_text = result.get("response", "")
+                print(response_text)
 
                 # JSON 형식 응답 추출
                 try:
@@ -205,8 +250,14 @@ class LLMProcessor:
             elif "제목:" in line:
                 calendar_info["title"] = line.split("제목:")[1].strip()
             elif "참석자:" in line:
-                calendar_info["attendees"] = line.split("참석자:")[1].strip()
+                attendees = line.split("참석자:")[1].strip()
+                # 참석자가 없는 경우 처리
+                if attendees and attendees != "없음" and attendees != "참석자 없음":
+                    calendar_info["attendees"] = attendees
             elif "장소:" in line:
-                calendar_info["location"] = line.split("장소:")[1].strip()
+                location = line.split("장소:")[1].strip()
+                # 장소가 없는 경우 처리
+                if location and location != "없음" and location != "장소 없음":
+                    calendar_info["location"] = location
 
         return calendar_info

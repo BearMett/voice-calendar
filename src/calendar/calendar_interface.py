@@ -40,7 +40,7 @@ class CalendarInterface:
         일정 추가
 
         Args:
-            calendar_info (dict): 일정 정보 (날짜, 시간, 제목, 참석자, 장소 등)
+            calendar_info (dict): 일정 정보 (날짜, 시간, 제목, 장소 등)
 
         Returns:
             bool: 일정 추가 성공 여부

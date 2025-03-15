@@ -28,3 +28,4 @@ gcloud/credentials.json.enc
 prompts/
 models/
 recorded_audio.wav
+token.json

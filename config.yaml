@@ -1,6 +1,6 @@
 calendar:
   type: google
-  credentials_path: gcloud/credentials.json
+  credentials_path: gcloud/credential.json
   token_path: token.json
 
 speech:
@@ -16,5 +16,5 @@ llm:
   #model_type: huggingface
   #model_name: beomi/KoAlpaca-Polyglot-5.8B
   model_type: ollama
-  model_name: bnksys/yanolja-eeve-korean-instruct-10.8b
+  model_name: mistral:latest
   cache_dir: models 

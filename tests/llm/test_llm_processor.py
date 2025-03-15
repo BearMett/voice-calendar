@@ -133,7 +133,6 @@ class TestLLMProcessor(unittest.TestCase):
         날짜: 2023-03-15
         시간: 14:00
         제목: 테스트 일정
-        참석자: test@example.com
         장소: 테스트 장소
         """
 
@@ -208,7 +207,6 @@ class TestLLMProcessor(unittest.TestCase):
             날짜: 2023-03-16
             시간: 15:00
             제목: 다른 테스트 일정
-            참석자: other@example.com
             장소: 다른 테스트 장소
             """
         }
@@ -241,7 +239,6 @@ class TestLLMProcessor(unittest.TestCase):
         날짜: 2023-03-15
         시간: 14:00
         제목: 테스트 일정
-        참석자: test@example.com
         장소: 테스트 장소
         """
 
