@@ -147,13 +147,13 @@ class LLMProcessor:
         장소: 장소 정보 (없으면 '없음')
         
         JSON 형식으로 응답해주세요:
-        {
+        {{
             "date": "YYYY-MM-DD",
             "time": "HH:MM",
             "title": "일정 제목",
             "attendees": "참석자 목록",
             "location": "장소 정보"
-        }
+        }}
         """
 
         try:

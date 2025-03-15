@@ -56,21 +56,24 @@ class VoiceCalendarApp:
 
         while True:
             print("\n1. 음성 녹음 및 일정 추가")
-            print("2. 오늘 일정 조회")
-            print("3. 일정 검색")
-            print("4. 설정 변경")
-            print("5. 종료")
+            print("2. 텍스트 입력으로 일정 추가")
+            print("3. 오늘 일정 조회")
+            print("4. 일정 검색")
+            print("5. 설정 변경")
+            print("6. 종료")
             choice = input("선택하세요: ")
 
             if choice == "1":
                 self.record_and_add_event()
             elif choice == "2":
-                self.show_today_events()
+                self.text_input_and_add_event()
             elif choice == "3":
-                self.search_events()
+                self.show_today_events()
             elif choice == "4":
-                self.change_settings()
+                self.search_events()
             elif choice == "5":
+                self.change_settings()
+            elif choice == "6":
                 print("프로그램을 종료합니다.")
                 break
             else:
@@ -90,6 +93,39 @@ class VoiceCalendarApp:
             # 음성을 텍스트로 변환
             text = self.speech_recognizer.transcribe(audio_file)
             print(f"\n인식된 텍스트: {text}")
+
+            # 텍스트에서 일정 정보 추출
+            calendar_info = self.llm_processor.extract_calendar_info(text)
+            print("\n추출된 일정 정보:")
+            for key, value in calendar_info.items():
+                print(f"{key}: {value}")
+
+            # 사용자 확인
+            confirm = input("\n이 정보로 일정을 추가하시겠습니까? (y/n): ")
+            if confirm.lower() == "y":
+                # 캘린더에 일정 추가
+                success = self.calendar.add_event(calendar_info)
+                if success:
+                    print("일정이 성공적으로 추가되었습니다.")
+                else:
+                    print("일정 추가에 실패했습니다.")
+
+        except Exception as e:
+            print(f"오류 발생: {e}")
+
+    def text_input_and_add_event(self):
+        """텍스트 입력을 통한 일정 추가"""
+        try:
+            # 텍스트 입력 받기
+            print("\n일정에 대한 설명을 텍스트로 입력하세요:")
+            print("(예: 내일 오후 3시에 홍길동님과 강남역에서 미팅)")
+            text = input("> ")
+
+            if not text.strip():
+                print("입력이 없습니다. 메인 메뉴로 돌아갑니다.")
+                return
+
+            print(f"\n입력된 텍스트: {text}")
 
             # 텍스트에서 일정 정보 추출
             calendar_info = self.llm_processor.extract_calendar_info(text)
